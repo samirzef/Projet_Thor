@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algorithme de Johnson - F2 || Cmax</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-image: url('back.png'); /* Remplacez l'URL de l'image par celle de votre choix */
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: white;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.8); /* Fond semi-transparent */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+
+        h1,h2 {
+            text-align: center;
+            color: #333;
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-size: 16px;
+            margin-bottom: 8px;
+            display: block;
+            color: #333;
+        }
+
+        textarea {
+            width: calc(100% - 20px);
+            padding: 8px;
+            margin: 8px 0 16px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        .button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+
+        .button:hover {
+            background-color: #45a049;
+        }
+
+        .output {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            color: #333;
+        }
+
+        .output p {
+            margin: 5px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+            text-align: center;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #f4f4f4;
+            font-weight: bold;
+        }
+
+        td {
+            background-color: #fafafa;
+        }
+
+        /* Style du simple graphique à barres */
+        #barChart {
+            margin-top: 30px;
+            width: 100%;
+            height: 400px;
+        }
+    </style>
+    <!-- Inclure la bibliothèque Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <div class="container">
+        <h1>F2 || Cmax</h1>
+		<h2>Algorithme de Johnson</h2>
+
+        <label for="tasks">Entrez les tâches (Pi sur M1, Pi sur M2) séparées par des virgules, chaque tâche sur une nouvelle ligne :</label>
+   <textarea id="tasks" rows="5" placeholder="Exemple : 
+3,6
+2,8
+7,4
+5,3"></textarea>
+
+
+        <button class="button" onclick="calculateJohnson()">Calculer l'ordre optimal et Cmax</button>
+
+        <div class="output" id="output"></div>
+        
+        <!-- Zone pour afficher le graphique simple -->
+        <canvas id="barChart"></canvas>
+    </div>
+
+    <script>
+        function calculateJohnson() {
+    const tasksInput = document.getElementById('tasks').value.trim();
+
+    // Validation de l'entrée
+    if (!tasksInput || tasksInput.split('\n').some(line => line.split(',').length !== 2)) {
+        alert("Veuillez entrer des tâches sous le format P1,P2 !");
+        return;
+    }
+
+    const tasks = tasksInput.split('\n').map(task => task.split(',').map(Number));
+
+    // Implémentation de l'algorithme de Johnson
+    const johnsonAlgorithm = (tasks) => {
+        let S1 = [], S2 = [];
+        tasks.forEach((task, i) => {
+            if (task[0] <= task[1]) {
+                S1.push([i + 1, task[0], task[1]]);
+            } else {
+                S2.push([i + 1, task[0], task[1]]);
+            }
+        });
+
+        // Trier S1 par P1 croissant, S2 par P2 décroissant
+        S1.sort((a, b) => a[1] - b[1]);
+        S2.sort((a, b) => b[2] - a[2]);
+
+        // Construire la séquence optimale
+        const sequence = [...S1.map(task => task[0]), ...S2.map(task => task[0])];
+
+        // Calculer le makespan Cmax
+        let currentTimeM1 = 0, currentTimeM2 = 0;
+        sequence.forEach(taskIndex => {
+            const [P1, P2] = tasks[taskIndex - 1];
+            currentTimeM1 += P1;
+            currentTimeM2 = Math.max(currentTimeM1, currentTimeM2) + P2;
+        });
+
+        return [sequence, currentTimeM2];
+    };
+
+    // Appeler l'algorithme de Johnson
+    const [sequence, Cmax] = johnsonAlgorithm(tasks);
+
+    // Affichage des résultats
+    const outputDiv = document.getElementById('output');
+    outputDiv.innerHTML = `<p><strong>L'ordre optimal des tâches est :</strong> T${sequence.join(', T')}</p>
+                           <p><strong>Le Cmax est :</strong> ${Cmax}</p>
+						   <br>
+                           <p><strong>Temps sur M1 et M2 pour chaque tâche :</strong></p>
+                           <table>
+                               <thead>
+                                   <tr>
+                                       <th>Tâche</th>
+                                       ${sequence.map(taskIndex => `<th>T${taskIndex}</th>`).join('')}
+                                   </tr>
+                               </thead>
+                               <tbody>
+                                   <tr>
+                                       <td><strong>M1</strong></td>
+                                       ${sequence.map(taskIndex => {
+                                           const [P1] = tasks[taskIndex - 1];
+                                           return `<td>${P1}</td>`;
+                                       }).join('')}
+                                   </tr>
+                                   <tr>
+                                       <td><strong>M2</strong></td>
+                                       ${sequence.map(taskIndex => {
+                                           const [, P2] = tasks[taskIndex - 1];
+                                           return `<td>${P2}</td>`;
+                                       }).join('')}
+                                   </tr>
+                               </tbody>
+                           </table>`;
+
+}
+    </script>
+
+</body>
+</html>
